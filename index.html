@@ -162,7 +162,7 @@
             
             // 通常クリア時のメッセージと画像
             successTitle: "Perfect!",
-            successMessage: "全問正解おめでとう！<br>ささやかなプレゼントを、、<br>これからも楽しい時間を一緒に過ごそうね！",
+            successMessage: "全問正解おめでとう！<br>ささやかなプレゼントを受け取ってください！<br>これからも楽しい時間を一緒に過ごそうね！",
             successImage: "./IMG_4207.jpg",
 
             // 失敗時のメッセージ
@@ -171,9 +171,10 @@
 
             // 隠し要素（裏ルート）クリア時のメッセージと画像
             secretTitle: "Secret Memory",
-            secretMessage: "隠しルート発見！<br>あなたは私のことを知り尽くしていますね。<br>これは二人だけの秘密の思い出です。",
+            secretMessage: "ここまでやってくるとは、、！<br>これにはちいかわもびっくり<br>ちなみに私はケツットリア・プリーノがお気に入りです！",
             // 裏ルート用の特別な画像URL
-            secretImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1080&q=80", 
+            secretImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1080&q=80",
+            secretImage2: "./IMG_7057.jpg", 
         };
 
         // クイズデータ
@@ -196,9 +197,9 @@
                     "./IMG_3570.jpg",
                     "./IMG_3712.jpg"
                 ],
-                options: ["焼肉", "サンチュ", "茶碗蒸し", "刺身"],
+                options: ["ラーメン", "ナムル", "茶碗蒸し", "刺身"],
                 correctIndex: 2,
-                secretIndex: 3
+                secretIndex: 0
             },
             {
                 q: "Q3.バレンタインにもらったピクミンのチョコレート。どのピクミンがイチゴを持っている？",
@@ -231,7 +232,7 @@
                 ],
                 options: ["ティファニー・フォーエバー", "ティファニー・チイカワー", "ティファニー・ハーモニー", "ティファニー・トゥギャザー"],
                 correctIndex: 3,
-                secretIndex: 3
+                secretIndex: 1
             },
             {
                 q: "Q6.抹茶アイスの食べ比べ。ハーゲンダッツとMOW、あと一つは？",
@@ -242,7 +243,7 @@
                 ],
                 options: ["ハイパーカップ", "スーパーマリオ", "スーパーカップ", "レディーボーデン"],
                 correctIndex: 2,
-                secretIndex: 3
+                secretIndex: 1
             },
             {
                 q: "Q7.新婚旅行の沖縄で食べた海老がおいしいお店の名前は？",
@@ -251,9 +252,9 @@
                     "./IMG_4872.jpg",
                     "./GOPR6665.jpg"
                 ],
-                options: ["イセエビの里SHURI", "えびえびパラダイス", "海老の台所SAWARA", "くるまえびキッチンTAMAYA"],
+                options: ["イセエビの里SHURI", "えびえび☆パラダイス", "海老の台所SAWARA", "くるまえびキッチンTAMAYA"],
                 correctIndex: 3,
-                secretIndex: 3
+                secretIndex: 1
             },
             {
                 q: "Q8.ついに我が家にやってきたオタマトーン。色は？",
@@ -262,9 +263,9 @@
                     "./IMG_5793.jpg",
                     "./IMG_5830.jpg"
                 ],
-                options: ["白", "赤", "黒", "青"],
+                options: ["白", "レインボー", "黒", "青"],
                 correctIndex: 0,
-                secretIndex: 3
+                secretIndex: 1
             },
             {
                 q: "Q9.今年も行ったまつりつくば。ねぶたから投げられたものは？",
@@ -273,7 +274,7 @@
                     "./IMG_5962.jpg",
                     "./IMG_5892.jpg"
                 ],
-                options: ["鈴", "豆", "コイン", "リンゴ"],
+                options: ["鈴", "豆", "コイン", "青森産のリンゴ"],
                 correctIndex: 0,
                 secretIndex: 3
             },
@@ -284,9 +285,9 @@
                     "./IMG_6236.jpg",
                     "./IMG_6286.jpg"
                 ],
-                options: ["親鸞", "百点", "香蘭", "さつき"],
+                options: ["トトロ", "百点", "香蘭", "さつき"],
                 correctIndex: 2,
-                secretIndex: 3
+                secretIndex: 0
             },
             {
                 q: "Q11.大阪万博で回ったパビリオンの数はいくつ？",
@@ -295,7 +296,7 @@
                     "./IMG_6504.jpg",
                     "./IMG_6617.jpg"
                 ],
-                options: ["2", "3", "4", "5"],
+                options: ["2", "3", "4", "まずパビリオンの定義とは(略"],
                 correctIndex: 1,
                 secretIndex: 3
             },
@@ -308,7 +309,7 @@
                 ],
                 options: ["二人静", "爆発光宙", "叶", "卯兵衛"],
                 correctIndex: 2,
-                secretIndex: 3
+                secretIndex: 1
             }
         ];
 
@@ -494,6 +495,11 @@
                         ${config.successTitle}
                     </div>
                     <p class="text-xs text-gray-400 tracking-widest mb-8">ALL QUESTIONS CLEARED</p>
+
+                    <!-- 画像エリアの高さを少し抑え (30vh)、余白も調整して画面内に収める -->
+                    <div class="mb-6 relative rounded-2xl overflow-hidden shadow-2xl border border-white border-opacity-20 mx-auto" style="max-height: 30vh;">
+                        <img src="${config.successImage}" alt="Main Visual" class="w-full h-full object-cover">
+                    </div>
                     
                     <p class="text-base leading-loose text-white font-light mb-8">
                         ${config.successMessage}
@@ -518,6 +524,11 @@
                         ${config.secretTitle}
                     </div>
                     <p class="text-xs text-pink-300 tracking-widest mb-8">SECRET ROUTE UNLOCKED</p>
+
+                    <!-- 画像エリアの高さを少し抑え (30vh)、余白も調整して画面内に収める -->
+                    <div class="mb-6 relative rounded-2xl overflow-hidden shadow-2xl border border-white border-opacity-20 mx-auto" style="max-height: 30vh;">
+                        <img src="${config.secretImage2}" alt="Main Visual" class="w-full h-full object-cover">
+                    </div>
                     
                     <p class="text-base leading-loose text-white font-light mb-8">
                         ${config.secretMessage}
@@ -614,5 +625,4 @@
         renderStartScreen();
     </script>
 </body>
-
 </html>
