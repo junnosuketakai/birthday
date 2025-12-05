@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy Birthday!</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Zen Kaku Gothic New', sans-serif;
+            background-color: #000;
+            color: #e5e5e5;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        .serif {
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        /* --- 背景スライドショー (フェード切り替え) --- */
+        #bg-slideshow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        .bg-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out, transform 10s ease-out;
+            transform: scale(1.1); /* 少しズームアウトする演出 */
+        }
+
+        .bg-slide.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* 背景を暗くするオーバーレイ */
+        #bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6); /* 黒の透過レイヤー */
+            z-index: 1;
+            backdrop-filter: blur(3px);
+        }
+
+        /* --- メインコンテンツ --- */
+        #main-container {
+            position: relative;
+            z-index: 10;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Glassmorphism Card */
+        .glass-card {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .option-btn {
+            transition: all 0.2s ease;
+        }
+        .option-btn:active {
+            transform: scale(0.98);
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .option-selected {
+            background-color: rgba(255, 215, 0, 0.2) !important;
+            border-color: rgba(255, 215, 0, 0.8) !important;
+            color: #FFD700 !important;
+        }
+
+        /* Canvas for Confetti */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 背景スライドショー -->
+    <div id="bg-slideshow"></div>
+    <!-- 暗くするオーバーレイ -->
+    <div id="bg-overlay"></div>
+    
+    <!-- 紙吹雪 -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- メインコンテンツ -->
+    <div id="main-container">
+        <main id="app" class="w-full">
+            <!-- Content will be injected here by JavaScript -->
+        </main>
+    </div>
+
+    <script>
+        // ==========================================
+        //  カスタマイズエリア
+        // ==========================================
+
+        const config = {
+            title: "Happy Birthday Sana",
+            subtitle: "The 12 Questions Challenge",
+            
+            // 初期画面に表示するメイン画像
+            startScreenImage: "./IMG_4913.jpg",
+
+            introText: "お誕生日おめでとう！<br>思い出を振り返るクイズを用意したよ！<br>全問正解にチャレンジ！",
+            
+            // 通常クリア時のメッセージと画像
+            successTitle: "Perfect!",
+            successMessage: "全問正解おめでとう！<br>ささやかなプレゼントを受け取ってください！<br>これからも楽しい時間を一緒に過ごそうね！",
+            successImage: "./IMG_4207.jpg",
+
+            // 失敗時のメッセージ
+            failTitle: "Almost...",
+            failMessage: "惜しい！<br>もう一回チャレンジしてみよう！",
+
+            // 隠し要素（裏ルート）クリア時のメッセージと画像
+            secretTitle: "Secret Memory",
+            secretMessage: "ここまでやってくるとは、、！<br>これにはちいかわもびっくり<br>ちなみに私はケツットリア・プリーノがお気に入りです！",
+            // 裏ルート用の特別な画像URL
+            secretImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1080&q=80",
+            secretImage2: "./IMG_7057.jpg", 
+        };
+
+        // クイズデータ
+        const quizData = [
+            {
+                q: "Q1.2024年のクリスマスは何を食べた",
+                images: [
+                    "./IMG_3192.jpg",
+                    "./IMG_3238.jpg",
+                    "./IMG_3272.jpg"
+                ],
+                options: ["マクドナルド", "ケンタッキー", "ドミノピザ", "野草"],
+                correctIndex: 1,
+                secretIndex: 3 
+            },
+            {
+                q: "Q2.半年記念日に行く蓮やでは何がお通しで出てくる？",
+                images: [
+                    "./IMG_3339.jpg",
+                    "./IMG_3570.jpg",
+                    "./IMG_3712.jpg"
+                ],
+                options: ["ラーメン", "ナムル", "茶碗蒸し", "刺身"],
+                correctIndex: 2,
+                secretIndex: 0
+            },
+            {
+                q: "Q3.バレンタインにもらったピクミンのチョコレート。どのピクミンがイチゴを持っている？",
+                images: [
+                    "./IMG_3777.jpg",
+                    "./IMG_3792.jpg",
+                    "./IMG_3899.jpg"
+                ],
+                options: ["赤ピクミン", "青ピクミン", "黄ピクミン", "オリマー"],
+                correctIndex: 1,
+                secretIndex: 3
+            },
+            {
+                q: "Q4.鬼怒川温泉に泊まった時に夜ご飯を食べたイタリアンのお店の名前は？",
+                images: [
+                    "./IMG_4272.jpg",
+                    "./IMG_4313.jpg",
+                    "./IMG_4381.jpg"
+                ],
+                options: ["トラットリア・カミーノ", "リストランテ・ツム", "リストランテ・ブルーノ", "ケツットリア・プリーノ"],
+                correctIndex: 0,
+                secretIndex: 3
+            },
+            {
+                q: "Q5.結婚指輪はティファニーのどの種類にした？",
+                images: [
+                    "./IMG_4427.jpg",
+                    "./IMG_4567.jpg",
+                    "./IMG_4597.jpg"
+                ],
+                options: ["ティファニー・フォーエバー", "ティファニー・チイカワー", "ティファニー・ハーモニー", "ティファニー・トゥギャザー"],
+                correctIndex: 3,
+                secretIndex: 1
+            },
+            {
+                q: "Q6.抹茶アイスの食べ比べ。ハーゲンダッツとMOW、あと一つは？",
+                images: [
+                    "./IMG_4634.jpg",
+                    "./IMG_4705.jpg",
+                    "./IMG_4775.jpg"
+                ],
+                options: ["ハイパーカップ", "スーパーマリオ", "スーパーカップ", "レディーボーデン"],
+                correctIndex: 2,
+                secretIndex: 1
+            },
+            {
+                q: "Q7.新婚旅行の沖縄で食べた海老がおいしいお店の名前は？",
+                images: [
+                    "./IMG_4841.jpg",
+                    "./IMG_4872.jpg",
+                    "./GOPR6665.jpg"
+                ],
+                options: ["イセエビの里SHURI", "えびえび☆パラダイス", "海老の台所SAWARA", "くるまえびキッチンTAMAYA"],
+                correctIndex: 3,
+                secretIndex: 1
+            },
+            {
+                q: "Q8.ついに我が家にやってきたオタマトーン。色は？",
+                images: [
+                    "./IMG_5767.jpg",
+                    "./IMG_5793.jpg",
+                    "./IMG_5830.jpg"
+                ],
+                options: ["白", "レインボー", "黒", "青"],
+                correctIndex: 0,
+                secretIndex: 1
+            },
+            {
+                q: "Q9.今年も行ったまつりつくば。ねぶたから投げられたものは？",
+                images: [
+                    "./IMG_5943.jpg",
+                    "./IMG_5962.jpg",
+                    "./IMG_5892.jpg"
+                ],
+                options: ["鈴", "豆", "コイン", "青森産のリンゴ"],
+                correctIndex: 0,
+                secretIndex: 3
+            },
+            {
+                q: "Q10.二人で宇都宮で餃子を食べたよ。最初にふたつずつ頼んだお店は龍門と何？",
+                images: [
+                    "./IMG_5989.jpg",
+                    "./IMG_6236.jpg",
+                    "./IMG_6286.jpg"
+                ],
+                options: ["トトロ", "百点", "香蘭", "さつき"],
+                correctIndex: 2,
+                secretIndex: 0
+            },
+            {
+                q: "Q11.大阪万博で回ったパビリオンの数はいくつ？",
+                images: [
+                    "./IMG_6397.jpg",
+                    "./IMG_6504.jpg",
+                    "./IMG_6617.jpg"
+                ],
+                options: ["2", "3", "4", "まずパビリオンの定義とは(略"],
+                correctIndex: 1,
+                secretIndex: 3
+            },
+            {
+                q: "Q12.佐原で飲んだ日本酒の見比べで二人とも選んだ日本酒はどれ？",
+                images: [
+                    "./IMG_6670.jpg",
+                    "./IMG_6785.jpg",
+                    "./IMG_6967.jpg"
+                ],
+                options: ["二人静", "爆発光宙", "叶", "卯兵衛"],
+                correctIndex: 2,
+                secretIndex: 1
+            }
+        ];
+
+        // ==========================================
+        //  ここから下はロジック部分
+        // ==========================================
+
+        const app = document.getElementById('app');
+        const bgSlideshow = document.getElementById('bg-slideshow');
+        
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+        let slideshowInterval;
+        let cardSlideshowInterval; // カード内画像用のタイマー変数
+
+        // 背景スライドショー制御関数 (フェード形式に戻しました)
+        function startBackgroundSlideshow(images) {
+            // クリア
+            if (slideshowInterval) clearInterval(slideshowInterval);
+            bgSlideshow.innerHTML = '';
+            
+            if (!images || images.length === 0) {
+                // デフォルト背景
+                const defaultDiv = document.createElement('div');
+                defaultDiv.className = 'bg-slide active';
+                defaultDiv.style.background = 'linear-gradient(135deg, #000000 0%, #2c1a1d 100%)';
+                bgSlideshow.appendChild(defaultDiv);
+                return;
+            }
+
+            // 画像要素を作成
+            images.forEach((imgUrl, index) => {
+                const div = document.createElement('div');
+                div.className = `bg-slide ${index === 0 ? 'active' : ''}`;
+                div.style.backgroundImage = `url('${imgUrl}')`;
+                bgSlideshow.appendChild(div);
+            });
+
+            // 1枚しかなければ切り替えしない
+            if (images.length <= 1) return;
+
+            // スライドショー開始
+            let activeIndex = 0;
+            const slides = bgSlideshow.querySelectorAll('.bg-slide');
+            
+            slideshowInterval = setInterval(() => {
+                slides[activeIndex].classList.remove('active');
+                activeIndex = (activeIndex + 1) % slides.length;
+                slides[activeIndex].classList.add('active');
+            }, 5000); // 5秒ごとに切り替え
+        }
+
+        // カード内画像スライドショー制御関数 (新規追加)
+        function startCardImageSlideshow(images) {
+            if (cardSlideshowInterval) clearInterval(cardSlideshowInterval);
+            
+            // DOM更新直後は要素が取得できない場合があるため、少し待つか、
+            // renderQuestion内でこの関数を呼ぶ前にHTMLを設定していることを前提とする
+            const container = document.getElementById('card-image-container');
+            if (!container) return;
+
+            container.innerHTML = '';
+            
+            if (!images || images.length === 0) return;
+
+            // 画像要素を作成して配置
+            images.forEach((imgUrl, index) => {
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                // フェード効果用のクラス
+                img.className = `absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === 0 ? 'opacity-100' : 'opacity-0'}`;
+                container.appendChild(img);
+            });
+
+            if (images.length <= 1) return;
+
+            let activeIndex = 0;
+            const imgElements = container.querySelectorAll('img');
+            
+            cardSlideshowInterval = setInterval(() => {
+                // 現在の画像を透明に
+                imgElements[activeIndex].classList.remove('opacity-100');
+                imgElements[activeIndex].classList.add('opacity-0');
+                
+                // 次の画像へ
+                activeIndex = (activeIndex + 1) % imgElements.length;
+                
+                // 次の画像を不透明に
+                imgElements[activeIndex].classList.remove('opacity-0');
+                imgElements[activeIndex].classList.add('opacity-100');
+            }, 5000); // 背景と同期して5秒ごとに切り替え
+        }
+
+
+        // 初期画面
+        function renderStartScreen() {
+            currentQuestionIndex = 0;
+            userAnswers = [];
+            stopConfetti();
+            if (cardSlideshowInterval) clearInterval(cardSlideshowInterval);
+            
+            // 初期背景画像
+            startBackgroundSlideshow([config.startScreenImage]);
+
+            app.innerHTML = `
+                <div class="glass-card rounded-3xl p-6 md:p-8 text-center fade-in mx-auto">
+                    
+                    <!-- タイトルサイズをレスポンシブに調整 -->
+                    <h1 class="serif text-3xl md:text-5xl font-bold mb-2 md:mb-4 text-white tracking-widest mt-2">
+                        ${config.title}
+                    </h1>
+                    <p class="text-gray-400 text-xs tracking-[0.2em] uppercase mb-6 border-b border-gray-600 pb-4 inline-block">
+                        ${config.subtitle}
+                    </p>
+
+                    <!-- 画像エリアの高さを少し抑え (30vh)、余白も調整して画面内に収める -->
+                    <div class="mb-6 relative rounded-2xl overflow-hidden shadow-2xl border border-white border-opacity-20 mx-auto" style="max-height: 30vh;">
+                        <img src="${config.startScreenImage}" alt="Main Visual" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <p class="text-sm md:text-base leading-loose mb-8 text-gray-200 font-light">
+                        ${config.introText}
+                    </p>
+                    
+                    <button onclick="startQuiz()" class="bg-white text-black font-medium tracking-widest py-3 md:py-4 px-10 md:px-12 rounded-full shadow-xl hover:bg-gray-200 transition-all duration-300 w-full transform active:scale-95">
+                        START
+                    </button>
+                </div>
+            `;
+        }
+
+        function startQuiz() {
+            renderQuestion();
+        }
+
+        // 質問画面
+        function renderQuestion() {
+            if (currentQuestionIndex >= quizData.length) {
+                checkAllAnswers();
+                return;
+            }
+
+            const data = quizData[currentQuestionIndex];
+            
+            // 背景画像を更新
+            startBackgroundSlideshow(data.images);
+
+            // 選択肢HTML生成
+            let optionsHtml = '';
+            data.options.forEach((opt, idx) => {
+                optionsHtml += `
+                    <button onclick="selectAnswer(${idx})" 
+                        class="option-btn w-full text-left py-4 px-5 rounded-lg mb-3 text-sm font-medium border border-white border-opacity-20 bg-black bg-opacity-40 hover:bg-opacity-60 text-gray-200 flex items-center justify-between group flex-shrink-0 backdrop-blur-sm">
+                        <span class="tracking-wide">${opt}</span>
+                        <span class="w-4 h-4 rounded-full border border-gray-500 group-hover:border-gray-300 transition-colors"></span>
+                    </button>
+                `;
+            });
+
+            app.innerHTML = `
+                <div class="glass-card rounded-3xl p-6 fade-in mx-auto flex flex-col">
+                    
+                    <div class="flex justify-between items-end mb-4 px-1">
+                        <span class="serif text-4xl text-white font-bold">${String(currentQuestionIndex + 1).padStart(2, '0')}</span>
+                        <span class="text-[10px] text-gray-400 uppercase tracking-widest pb-1">Total ${quizData.length}</span>
+                    </div>
+
+                    <h2 class="text-xl font-bold mb-6 text-white leading-relaxed px-1">
+                        ${data.q}
+                    </h2>
+                    
+                    <div class="space-y-1 pb-4">
+                        ${optionsHtml}
+                    </div>
+
+                    <!-- 追加: クイズ画像エリア (選択肢の下) -->
+                    <div class="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg border border-white border-opacity-10 mt-2 bg-black bg-opacity-20">
+                        <div id="card-image-container" class="w-full h-full relative">
+                            <!-- JSで画像を注入 -->
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // HTML描画後に画像スライドショーを開始
+            startCardImageSlideshow(data.images);
+        }
+
+        window.selectAnswer = function(selectedIndex) {
+            userAnswers.push(selectedIndex);
+            const buttons = document.querySelectorAll('.option-btn');
+            const selectedBtn = buttons[selectedIndex];
+            selectedBtn.classList.add('option-selected');
+            
+            setTimeout(() => {
+                currentQuestionIndex++;
+                renderQuestion();
+            }, 400); 
+        }
+
+        function checkAllAnswers() {
+            let correctCount = 0;
+            let secretCount = 0;
+
+            quizData.forEach((q, index) => {
+                // 通常正解チェック
+                if (q.correctIndex === userAnswers[index]) {
+                    correctCount++;
+                }
+                // 隠しルートチェック (設定されている場合のみ)
+                if (q.secretIndex !== undefined && q.secretIndex === userAnswers[index]) {
+                    secretCount++;
+                }
+            });
+
+            if (correctCount === quizData.length) {
+                // 全問正解
+                renderSuccess();
+            } else if (secretCount === quizData.length) {
+                // 隠しルート（全問裏回答）
+                renderSecret();
+            } else {
+                // 失敗
+                renderFail(correctCount);
+            }
+        }
+
+        // 通常成功画面
+        function renderSuccess() {
+            startConfetti(['#FFD700', '#C0C0C0', '#FFFFFF', '#FFEB3B']); // 金・銀
+            startBackgroundSlideshow([config.successImage]);
+            if (cardSlideshowInterval) clearInterval(cardSlideshowInterval);
+
+            app.innerHTML = `
+                <div class="glass-card rounded-3xl p-8 text-center fade-in mx-auto">
+                    <div class="serif text-5xl font-bold mb-2 text-yellow-400">
+                        ${config.successTitle}
+                    </div>
+                    <p class="text-xs text-gray-400 tracking-widest mb-8">ALL QUESTIONS CLEARED</p>
+
+                    <!-- 画像エリアの高さを少し抑え (30vh)、余白も調整して画面内に収める -->
+                    <div class="mb-6 relative rounded-2xl overflow-hidden shadow-2xl border border-white border-opacity-20 mx-auto" style="max-height: 30vh;">
+                        <img src="${config.successImage}" alt="Main Visual" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <p class="text-base leading-loose text-white font-light mb-8">
+                        ${config.successMessage}
+                    </p>
+                    
+                    <button onclick="location.reload()" class="text-xs text-gray-400 underline hover:text-white">
+                        REPLAY
+                    </button>
+                </div>
+            `;
+        }
+
+        // 隠しルート成功画面
+        function renderSecret() {
+            // 隠しルート用の紙吹雪（ピンクや紫など神秘的な色）
+            startConfetti(['#FF69B4', '#DA70D6', '#FFFFFF', '#00BFFF']); 
+            startBackgroundSlideshow([config.secretImage]);
+            if (cardSlideshowInterval) clearInterval(cardSlideshowInterval);
+
+            app.innerHTML = `
+                <div class="glass-card rounded-3xl p-8 text-center fade-in mx-auto border-pink-500 border-opacity-50">
+                    <div class="serif text-5xl font-bold mb-2 text-pink-400">
+                        ${config.secretTitle}
+                    </div>
+                    <p class="text-xs text-pink-300 tracking-widest mb-8">SECRET ROUTE UNLOCKED</p>
+
+                    <!-- 画像エリアの高さを少し抑え (30vh)、余白も調整して画面内に収める -->
+                    <div class="mb-6 relative rounded-2xl overflow-hidden shadow-2xl border border-white border-opacity-20 mx-auto" style="max-height: 30vh;">
+                        <img src="${config.secretImage2}" alt="Main Visual" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <p class="text-base leading-loose text-white font-light mb-8">
+                        ${config.secretMessage}
+                    </p>
+                    
+                    <button onclick="location.reload()" class="text-xs text-gray-400 underline hover:text-white">
+                        REPLAY
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderFail(score) {
+            // 背景アニメーションを停止して暗くする
+            if (slideshowInterval) clearInterval(slideshowInterval);
+            if (cardSlideshowInterval) clearInterval(cardSlideshowInterval);
+            bgSlideshow.innerHTML = '<div class="bg-slide active" style="background: #111;"></div>';
+
+            app.innerHTML = `
+                <div class="glass-card rounded-3xl p-8 text-center fade-in mx-auto">
+                    <div class="serif text-6xl font-bold mb-4 text-gray-500 opacity-50">
+                        ${score}/${quizData.length}
+                    </div>
+                    <h2 class="text-2xl font-bold mb-4 text-white">${config.failTitle}</h2>
+                    <p class="text-sm leading-relaxed text-gray-400 mb-8">
+                        ${config.failMessage}
+                    </p>
+                    
+                    <button onclick="renderStartScreen()" class="bg-white border border-white text-black py-3 px-8 rounded-full hover:bg-gray-200 transition w-full font-bold">
+                        Try Again
+                    </button>
+                </div>
+            `;
+        }
+
+        // --- Confetti Logic ---
+        let confettiInterval;
+        function startConfetti(customColors) {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const pieces = [];
+            const numberOfPieces = 150;
+            // デフォルト色または指定色
+            const colors = customColors || ['#FFD700', '#C0C0C0', '#FFFFFF', '#FFEB3B'];
+
+            for (let i = 0; i < numberOfPieces; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    w: Math.random() * 8 + 2,
+                    h: Math.random() * 8 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speed: Math.random() * 3 + 2,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 4
+                });
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                pieces.forEach(p => {
+                    ctx.save();
+                    ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = 0.8;
+                    ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                    ctx.restore();
+                    p.y += p.speed;
+                    p.rotation += p.rotationSpeed;
+                    if (p.y > canvas.height) {
+                        p.y = -10;
+                        p.x = Math.random() * canvas.width;
+                    }
+                });
+            }
+            if (confettiInterval) clearInterval(confettiInterval);
+            confettiInterval = setInterval(draw, 20);
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+
+        function stopConfetti() {
+            if (confettiInterval) clearInterval(confettiInterval);
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        renderStartScreen();
+    </script>
+</body>
+</html>
